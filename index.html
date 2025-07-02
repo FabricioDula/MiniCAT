@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MiniCAD - Herramienta de dibujo 2D</title>
+    <link rel="stylesheet" href="minicad.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/1.4.0/svg2pdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Home Screen -->
+    <div id="home-screen" class="flex flex-col h-screen items-center justify-center space-y-4 p-4">
+        <h1 class="text-3xl font-bold text-blue-600 mb-8">MiniCAD</h1>
+        <div id="drawings-list" class="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <!-- Drawings will appear here -->
+        </div>
+        <button id="new-drawing-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700">
+            Nuevo Dibujo
+        </button>
+    </div>
+
+    <!-- Main App (hidden initially) -->
+    <div id="app-container" class="flex flex-col h-screen" style="display: none;">
+        <!-- Header -->
+        <header class="bg-white shadow-sm py-2 px-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <h1 class="text-xl font-bold text-blue-600">MiniCAD</h1>
+            </div>
+            <div class="flex space-x-2">
+                <button id="menu-toggle" class="mobile-only px-3 py-1 bg-gray-200 rounded">☰</button>
+                <button id="open-btn" class="desktop-only px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700">Abrir</button>
+                <button id="save-btn" class="desktop-only px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700">Guardar</button>
+                <button id="export-btn" class="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 active:bg-purple-700">Exportar</button>
+                <button id="clear-btn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-500">Limpiar</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+            <!-- Tools Panel -->
+            <div id="tools-panel" class="w-16 bg-white shadow-sm flex flex-col items-center py-4 space-y-4">
+                <button data-tool="select" class="tool-btn p-2 rounded hover:bg-gray-200 active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                        <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg>
+                </button>
+                <button data-tool="line" class="tool-btn p-2 rounded hover:bg-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <button data-tool="rect" class="tool-btn p-2 rounded hover:bg-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    </svg>
+                </button>
+                <button data-tool="circle" class="tool-btn p-2 rounded hover:bg-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                    </svg>
+                </button>
+                <button data-tool="eraser" class="tool-btn p-2 rounded hover:bg-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 21h10"></path>
+                        <path d="M12 21l8-8"></path>
+                        <path d="M3 13l8-8 5 5-8 8z"></path>
+                    </svg>
+                </button>
+                <button data-tool="pan" class="tool-btn p-2 rounded hover:bg-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
+                    </svg>
+                </button>
+                
+                <!-- Sección de símbolos eléctricos -->
+                <div class="border-t pt-4 mt-4 w-full flex flex-col items-center">
+                    <h3 class="text-xs font-bold mb-2">Eléctricos</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button data-tool="power-source" class="tool-btn p-2 rounded hover:bg-gray-200" title="Fuente de poder">
+                            ⏦
+                        </button>
+                        <button data-tool="resistor" class="tool-btn p-2 rounded hover:bg-gray-200" title="Resistencia">
+                            Ω
+                        </button>
+                        <button data-tool="capacitor" class="tool-btn p-2 rounded hover:bg-gray-200" title="Condensador">
+                            | |
+                        </button>
+                        <button data-tool="inductor" class="tool-btn p-2 rounded hover:bg-gray-200" title="Inductor">
+                            ⌇⌇
+                        </button>
+                        <button data-tool="diode" class="tool-btn p-2 rounded hover:bg-gray-200" title="Diodo">
+                            ▲|
+                        </button>
+                        <button data-tool="ground" class="tool-btn p-2 rounded hover:bg-gray-200" title="Tierra">
+                            ⏚
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4 mt-4 w-full flex flex-col items-center">
+                    <input type="color" id="color-picker" value="#000000" class="w-8 h-8 cursor-pointer">
+                    <input type="file" id="image-upload" accept="image/*" class="hidden">
+                    <button id="import-btn" class="mt-2 p-1 text-xs bg-gray-200 rounded active:bg-gray-300">Importar Imagen</button>
+                    <input type="range" id="line-width" min="1" max="10" value="2" class="mt-2 w-12">
+                </div>
+            </div>
+
+            <!-- Drawing Area -->
+            <div class="flex-1 relative" id="drawing-area">
+                <div class="grid-overlay w-full h-full"></div>
+                <canvas id="main-canvas"></canvas>
+            </div>
+
+            <!-- Layers Panel -->
+            <div id="layers-panel" class="w-48 bg-white shadow-sm p-4 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold">Capas</h2>
+                    <button id="add-layer" class="text-blue-500 hover:text-blue-700 active:text-blue-800">+</button>
+                </div>
+                <div id="layers-list" class="space-y-2">
+                    <div class="layer-item active p-2 rounded cursor-pointer flex justify-between items-center">
+                        <span>Capa 1</span>
+                        <div class="flex space-x-1">
+                            <button class="toggle-visibility text-gray-500 hover:text-gray-700" data-index="0">👁️</button>
+                            <button class="delete-layer text-gray-500 hover:text-gray-700" data-index="0">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Tools -->
+        <div id="mobile-tools" class="fixed bottom-4 left-0 right-0 flex justify-center space-x-2 p-2 bg-white/80 backdrop-blur-sm rounded-full mx-4 shadow-lg">
+            <button data-tool="select" class="tool-btn p-3 bg-white rounded-full shadow active">✏️</button>
+            <button data-tool="line" class="tool-btn p-3 bg-white rounded-full shadow">📏</button>
+            <button data-tool="rect" class="tool-btn p-3 bg-white rounded-full shadow">⬛</button>
+            <button data-tool="circle" class="tool-btn p-3 bg-white rounded-full shadow">🔴</button>
+            <button data-tool="eraser" class="tool-btn p-3 bg-white rounded-full shadow">🧽</button>
+            <button data-tool="pan" class="tool-btn p-3 bg-white rounded-full shadow">✋</button>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="bg-white shadow-sm px-4 py-1 text-sm text-gray-600 flex justify-between">
+            <div>Coordenadas: <span id="coords">0, 0</span></div>
+            <div>Escala: <span id="zoom-level">100%</span></div>
+        </footer>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+            <h2 class="text-xl font-bold mb-4">Exportar Dibujo</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Formato</label>
+                    <select id="export-format" class="w-full p-2 border rounded">
+                        <option value="png">PNG (Imagen)</option>
+                        <option value="jpeg">JPEG (Imagen)</option>
+                        <option value="svg">SVG (Vectorial)</option>
+                        <option value="pdf">PDF (Documento)</option>
+                        <option value="json">JSON (MiniCAD)</option>
+                    </select>
+                </div>
+                
+                <div id="export-options" class="space-y-2">
+                    <!-- Options will be added dynamically -->
+                </div>
+                
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button id="cancel-export" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 active:bg-gray-500">Cancelar</button>
+                    <button id="confirm-export" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 active:bg-purple-700">Exportar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Modal -->
+    <div id="mobile-menu" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden" style="backdrop-filter: blur(2px);">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 pt-4 shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Menú</h2>
+                <button id="close-menu" class="text-2xl">×</button>
+            </div>
+            <div class="space-y-4">
+                <button id="mobile-import-btn" class="w-full px-4 py-3 bg-blue-400 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">🖼️</span> Importar Imagen
+                </button>
+                <button id="mobile-open-btn" class="w-full px-4 py-3 bg-blue-500 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">📂</span> Abrir Dibujo
+                </button>
+                <button id="mobile-save-btn" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">💾</span> Guardar Dibujo
+                </button>
+                <button id="mobile-layers-btn" class="w-full px-4 py-3 bg-yellow-500 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">🖼️</span> Mostrar Capas
+                </button>
+                <button id="mobile-tools-btn" class="w-full px-4 py-3 bg-indigo-500 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">🛠️</span> Mostrar Herramientas
+                </button>
+                <button id="mobile-home-btn" class="w-full px-4 py-3 bg-gray-500 text-white rounded-lg text-left flex items-center">
+                    <span class="mr-2">🏠</span> Volver al Inicio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="minicad.js"></script>
+</body>
+</html>
